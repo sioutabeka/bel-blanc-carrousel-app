@@ -37,9 +37,9 @@
   background-repeat: no-repeat;
   overflow: hidden;
 }
-.cs-slide.cs-cover-bg { background-image: url("/bg/cover-bg.png"); }
-.cs-slide.cs-body-bg  { background-image: url("/bg/body-bg.png");  }
-.cs-slide.cs-cta-bg   { background-image: url("/bg/cta-bg.png");   }
+.cs-slide.cs-cover-bg { background-image: var(--cs-cover, url("/bg/themes/default/cover.png")); }
+.cs-slide.cs-body-bg  { background-image: url("/bg/body.png");  }
+.cs-slide.cs-cta-bg   { background-image: var(--cs-cta, url("/bg/themes/default/cta.png")); }
 
 /* ============== Hook (Cover & CTA) ============== */
 .cs-hook {

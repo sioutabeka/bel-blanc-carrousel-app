@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Carousel from "./Carousel";
+import ThemePicker from "./ThemePicker";
 import type { CarouselDraft } from "@/lib/schemas";
 
 interface Props {
@@ -144,7 +145,13 @@ export default function ExtractButton({ slug }: Props) {
       )}
 
       {draft && !showJson && (
-        <div>
+        <div className="space-y-3">
+          <ThemePicker
+            value={draft.theme}
+            onChange={(themeId) =>
+              setDraft({ ...draft, theme: themeId })
+            }
+          />
           {editing && (
             <div className="mb-3 px-4 py-3 rounded-md bg-accent/15 border border-accent/40 text-sm text-night">
               <strong>Mode édition</strong> — clique sur n'importe quel texte pour le modifier. Utilise <code className="px-1 bg-white rounded">*mot*</code> pour l'italique et <code className="px-1 bg-white rounded">**mot**</code> pour le gras. Les changements sont gardés en mémoire jusqu'à la sauvegarde.

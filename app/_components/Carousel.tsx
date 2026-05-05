@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import "./carousel.css";
 import { EditableText } from "./EditableText";
 import type {
@@ -36,8 +37,15 @@ export default function Carousel({ draft, editable, onChange }: CarouselProps) {
     onChange({ ...draft, slides });
   };
 
+  const themeStyle = draft.theme
+    ? ({
+        "--cs-cover": `url(/bg/themes/${draft.theme}/cover.png)`,
+        "--cs-cta": `url(/bg/themes/${draft.theme}/cta.png)`,
+      } as CSSProperties)
+    : undefined;
+
   return (
-    <div className="cs-deck">
+    <div className="cs-deck" style={themeStyle}>
       {draft.slides.map((slide, i) => (
         <div key={i} className="cs-frame">
           <div className="cs-frame-label">
