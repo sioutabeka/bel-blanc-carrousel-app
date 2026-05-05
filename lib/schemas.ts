@@ -63,7 +63,7 @@ export const MethodSlide = z.object({
   action: RichText.optional(),
 });
 
-/** Slide step-list — méthode longue 5-8 étapes compactes */
+/** Slide step-list — méthode longue 4-8 étapes compactes */
 export const StepsSlide = z.object({
   type: z.literal("steps"),
   tag: z.string(),
@@ -75,7 +75,7 @@ export const StepsSlide = z.object({
         text: z.string().describe("Description très brève. 6-12 mots."),
       })
     )
-    .min(5)
+    .min(4)
     .max(8),
   action: RichText.optional(),
 });

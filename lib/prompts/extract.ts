@@ -4,9 +4,141 @@ import { CarouselDraft as CarouselDraftSchema } from "../schemas";
 import { callClaude } from "../claude";
 
 /**
- * Schema JSON pour le tool `output_carousel`. Permissif (tous les champs optionnels
- * sauf `type`) — la validation stricte se fait côté Zod (discriminated union).
+ * Schema JSON pour le tool `output_carousel`. Discriminé par `type` via `oneOf` :
+ * Claude voit les contraintes exactes par variante (min/max steps, champs requis).
+ * Reflète strictement le schéma Zod côté `lib/schemas.ts`.
  */
+const SLIDE_COVER = {
+  type: "object",
+  properties: {
+    type: { const: "cover" },
+    title: { type: "string" },
+    subtitle: { type: "string" },
+  },
+  required: ["type", "title", "subtitle"],
+  additionalProperties: false,
+} as const;
+
+const SLIDE_BODY = {
+  type: "object",
+  properties: {
+    type: { const: "body" },
+    tag: { type: "string" },
+    title: { type: "string" },
+    body: { type: "string" },
+    testbox: {
+      type: "object",
+      properties: {
+        label: { type: "string" },
+        text: { type: "string" },
+      },
+      required: ["label", "text"],
+      additionalProperties: false,
+    },
+    action: { type: "string" },
+  },
+  required: ["type", "tag", "title", "body", "action"],
+  additionalProperties: false,
+} as const;
+
+const SLIDE_METHOD = {
+  type: "object",
+  properties: {
+    type: { const: "method" },
+    tag: { type: "string" },
+    title: { type: "string" },
+    steps: {
+      type: "array",
+      minItems: 2,
+      maxItems: 3,
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          text: { type: "string" },
+        },
+        required: ["title", "text"],
+        additionalProperties: false,
+      },
+    },
+    action: { type: "string" },
+  },
+  required: ["type", "tag", "title", "steps"],
+  additionalProperties: false,
+} as const;
+
+const SLIDE_STEPS = {
+  type: "object",
+  properties: {
+    type: { const: "steps" },
+    tag: { type: "string" },
+    title: { type: "string" },
+    steps: {
+      type: "array",
+      minItems: 4,
+      maxItems: 8,
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          text: { type: "string" },
+        },
+        required: ["title", "text"],
+        additionalProperties: false,
+      },
+    },
+    action: { type: "string" },
+  },
+  required: ["type", "tag", "title", "steps"],
+  additionalProperties: false,
+} as const;
+
+const SLIDE_DONTS = {
+  type: "object",
+  properties: {
+    type: { const: "donts" },
+    tag: { type: "string" },
+    title: { type: "string" },
+    donts: {
+      type: "array",
+      minItems: 3,
+      maxItems: 5,
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          reason: { type: "string" },
+        },
+        required: ["title", "reason"],
+        additionalProperties: false,
+      },
+    },
+    action: { type: "string" },
+  },
+  required: ["type", "tag", "title", "donts", "action"],
+  additionalProperties: false,
+} as const;
+
+const SLIDE_CTA = {
+  type: "object",
+  properties: {
+    type: { const: "cta" },
+    title: { type: "string" },
+    subtitle: { type: "string" },
+    button: {
+      type: "object",
+      properties: {
+        label: { type: "string" },
+        text: { type: "string" },
+      },
+      required: ["label", "text"],
+      additionalProperties: false,
+    },
+  },
+  required: ["type", "title", "subtitle", "button"],
+  additionalProperties: false,
+} as const;
+
 const TOOL_SCHEMA = {
   type: "object",
   properties: {
@@ -15,57 +147,14 @@ const TOOL_SCHEMA = {
       minItems: 5,
       maxItems: 10,
       items: {
-        type: "object",
-        properties: {
-          type: {
-            type: "string",
-            enum: ["cover", "body", "method", "steps", "donts", "cta"],
-          },
-          title: { type: "string" },
-          subtitle: { type: "string" },
-          tag: { type: "string" },
-          body: { type: "string" },
-          testbox: {
-            type: "object",
-            properties: {
-              label: { type: "string" },
-              text: { type: "string" },
-            },
-            required: ["label", "text"],
-          },
-          action: { type: "string" },
-          steps: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                title: { type: "string" },
-                text: { type: "string" },
-              },
-              required: ["title", "text"],
-            },
-          },
-          donts: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                title: { type: "string" },
-                reason: { type: "string" },
-              },
-              required: ["title", "reason"],
-            },
-          },
-          button: {
-            type: "object",
-            properties: {
-              label: { type: "string" },
-              text: { type: "string" },
-            },
-            required: ["label", "text"],
-          },
-        },
-        required: ["type"],
+        oneOf: [
+          SLIDE_COVER,
+          SLIDE_BODY,
+          SLIDE_METHOD,
+          SLIDE_STEPS,
+          SLIDE_DONTS,
+          SLIDE_CTA,
+        ],
       },
     },
   },
@@ -94,7 +183,7 @@ Chaque carrousel a **5 à 10 slides** dans cet ordre :
 - **cover** : la promesse du carrousel. Titre éditorial 3-8 mots + sous-titre 5-10 mots.
 - **body** (le plus utilisé) : tag + titre + paragraphe explicatif (2 phrases max) + testbox (encadré bleu : "Test rapide" / "Signe visible" / "La règle" / "À retenir") + action ("**Phrase impérative.** Précision.")
 - **method** : pour les recettes en 2-3 étapes. Tag + titre + 2-3 step cards (titre court + 1 phrase) + action.
-- **steps** : pour les méthodes longues 5-8 étapes très compactes. Step list condensée.
+- **steps** : pour les méthodes longues 4-8 étapes très compactes. Step list condensée.
 - **donts** : pour les "à ne jamais faire" — 3-5 interdits, chacun avec un titre court + une raison brève.
 - **cta** : la slide finale. Titre pivot + sous-titre + bouton avec label ("Confie-nous tes pièces") + texte ("Express 2h, *7j/7.*")
 
