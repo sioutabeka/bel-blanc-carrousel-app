@@ -16,7 +16,7 @@ Aucune base de données, aucun runtime côté client lourd. Tout est SSR + un se
 ## Arborescence
 
 ```
-siouta-carrousel-app/
+bel-blanc-carrousel-app/
 ├── app/
 │   ├── layout.tsx               # Root layout, charge les Google Fonts
 │   ├── page.tsx                 # Home — sidebar + écran d'accueil

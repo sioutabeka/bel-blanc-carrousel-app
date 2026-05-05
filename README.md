@@ -137,7 +137,7 @@ Dans le terminal, fais `Ctrl + C`.
 
 Il y a **deux dossiers** liés :
 
-1. **`~/Documents/siouta-carrousel-app/`** ← **toi tu es ici**, c'est l'app web.
+1. **`~/Documents/bel-blanc-carrousel-app/`** ← **toi tu es ici**, c'est l'app web.
 2. **`~/Documents/bel&blanc-carrousel/`** — le dossier des **assets** : articles JSON, fonds PNG depuis Canva, charte graphique (`CHARTE.md`), et les fichiers HTML standalone qui servent aujourd'hui à la production réelle.
 
 L'app lit les articles du dossier 2 via un **lien symbolique** (`data/`), donc si l'équipe contenu enrichit `articles.json`, l'app les voit automatiquement.
