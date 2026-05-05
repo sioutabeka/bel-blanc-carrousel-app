@@ -4,7 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import { CarouselDraft } from "./schemas";
 
-const CACHE_DIR = path.join(os.tmpdir(), "bel-blanc-drafts");
+const CACHE_DIR = path.join(os.tmpdir(), "siouta-carrousel-drafts");
 
 export async function writeDraft(slug: string, draft: CarouselDraft): Promise<void> {
   await fs.mkdir(CACHE_DIR, { recursive: true });

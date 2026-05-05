@@ -1,5 +1,5 @@
 {
-  "name": "bel-blanc-app",
+  "name": "siouta-carrousel-app",
   "version": "0.1.0",
   "private": true,
   "description": "Bel & Blanc — Carrousel Studio (Next.js app). Lit data/ et templates/ via symlinks vers ~/Documents/bel&blanc-carrousel/.",
