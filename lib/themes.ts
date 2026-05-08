@@ -8,8 +8,12 @@ export interface Theme {
   id: string;
   name: string;
   coverUrl: string;
+  bodyUrl: string;
   ctaUrl: string;
+  hasBody: boolean;
 }
+
+const FALLBACK_BODY_URL = "/bg/body.png";
 
 function titleCase(slug: string): string {
   return slug
@@ -32,11 +36,14 @@ export async function listThemes(): Promise<Theme[]> {
     const dir = path.join(THEMES_DIR, e.name);
     const files = await fs.readdir(dir);
     if (!files.includes("cover.png") || !files.includes("cta.png")) continue;
+    const hasBody = files.includes("body.png");
     themes.push({
       id: e.name,
       name: e.name === "default" ? "Défaut" : titleCase(e.name),
       coverUrl: `/bg/themes/${e.name}/cover.png`,
+      bodyUrl: hasBody ? `/bg/themes/${e.name}/body.png` : FALLBACK_BODY_URL,
       ctaUrl: `/bg/themes/${e.name}/cta.png`,
+      hasBody,
     });
   }
 
@@ -59,7 +66,8 @@ export function slugify(input: string): string {
 export async function createTheme(
   name: string,
   cover: ArrayBuffer,
-  cta: ArrayBuffer
+  cta: ArrayBuffer,
+  body?: ArrayBuffer
 ): Promise<Theme> {
   const id = slugify(name);
   if (!id) throw new Error("nom de thème invalide");
@@ -76,11 +84,40 @@ export async function createTheme(
   await fs.mkdir(dir, { recursive: true });
   await fs.writeFile(path.join(dir, "cover.png"), Buffer.from(cover));
   await fs.writeFile(path.join(dir, "cta.png"), Buffer.from(cta));
+  if (body) {
+    await fs.writeFile(path.join(dir, "body.png"), Buffer.from(body));
+  }
 
   return {
     id,
     name: titleCase(id),
     coverUrl: `/bg/themes/${id}/cover.png`,
+    bodyUrl: body ? `/bg/themes/${id}/body.png` : FALLBACK_BODY_URL,
     ctaUrl: `/bg/themes/${id}/cta.png`,
+    hasBody: !!body,
   };
+}
+
+export async function deleteTheme(id: string): Promise<void> {
+  if (!id || id === "default") {
+    throw new Error("le thème par défaut ne peut pas être supprimé");
+  }
+  if (id !== slugify(id)) {
+    throw new Error("identifiant de thème invalide");
+  }
+
+  const dir = path.join(THEMES_DIR, id);
+  const resolved = path.resolve(dir);
+  const base = path.resolve(THEMES_DIR);
+  if (!resolved.startsWith(base + path.sep)) {
+    throw new Error("chemin hors du dossier des thèmes");
+  }
+
+  try {
+    await fs.access(dir);
+  } catch {
+    throw new Error(`le thème "${id}" n'existe pas`);
+  }
+
+  await fs.rm(dir, { recursive: true, force: true });
 }

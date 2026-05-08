@@ -23,6 +23,8 @@ export async function POST(req: Request) {
     const name = String(form.get("name") ?? "").trim();
     const cover = form.get("cover");
     const cta = form.get("cta");
+    const bodyEntry = form.get("body");
+    const body = bodyEntry instanceof File && bodyEntry.size > 0 ? bodyEntry : null;
 
     if (!name) {
       return NextResponse.json({ error: "nom manquant" }, { status: 400 });
@@ -33,7 +35,11 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    if (cover.size > MAX_BYTES || cta.size > MAX_BYTES) {
+    if (
+      cover.size > MAX_BYTES ||
+      cta.size > MAX_BYTES ||
+      (body && body.size > MAX_BYTES)
+    ) {
       return NextResponse.json(
         { error: `fichier trop lourd (max ${MAX_BYTES / 1024 / 1024} Mo)` },
         { status: 400 }
@@ -42,14 +48,15 @@ export async function POST(req: Request) {
 
     const coverBuf = await cover.arrayBuffer();
     const ctaBuf = await cta.arrayBuffer();
-    if (!isPng(coverBuf) || !isPng(ctaBuf)) {
+    const bodyBuf = body ? await body.arrayBuffer() : null;
+    if (!isPng(coverBuf) || !isPng(ctaBuf) || (bodyBuf && !isPng(bodyBuf))) {
       return NextResponse.json(
         { error: "seuls les PNG sont acceptés" },
         { status: 400 }
       );
     }
 
-    const theme = await createTheme(name, coverBuf, ctaBuf);
+    const theme = await createTheme(name, coverBuf, ctaBuf, bodyBuf ?? undefined);
     return NextResponse.json({ theme }, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "erreur inconnue";

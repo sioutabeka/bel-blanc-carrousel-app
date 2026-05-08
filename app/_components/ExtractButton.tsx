@@ -24,6 +24,7 @@ export default function ExtractButton({ slug }: Props) {
   const [saving, setSaving] = useState(false);
   const [saveResult, setSaveResult] = useState<SaveResult | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [opening, setOpening] = useState(false);
 
   const [editing, setEditing] = useState(false);
 
@@ -49,6 +50,24 @@ export default function ExtractButton({ slug }: Props) {
       setError(e instanceof Error ? e.message : "erreur");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function openFolder() {
+    if (!saveResult) return;
+    setOpening(true);
+    try {
+      const res = await fetch("/api/open-folder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: saveResult.outDir }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : "ouverture impossible");
+    } finally {
+      setOpening(false);
     }
   }
 
@@ -128,13 +147,21 @@ export default function ExtractButton({ slug }: Props) {
       </div>
 
       {saveResult && (
-        <div className="px-4 py-3 rounded-md bg-green-50 border border-green-200 text-sm">
+        <div className="px-4 py-3 rounded-md bg-green-50 border border-green-200 text-sm space-y-2">
           <div className="font-semibold text-green-900">
             ✓ {saveResult.count} slides sauvegardées
           </div>
-          <div className="text-xs text-green-800 mt-1 font-mono break-all">
+          <div className="text-xs text-green-800 font-mono break-all">
             {saveResult.outDir}
           </div>
+          <button
+            type="button"
+            onClick={openFolder}
+            disabled={opening}
+            className="px-4 py-1.5 rounded bg-green-700 text-white text-xs font-semibold tracking-wide hover:bg-green-800 disabled:opacity-50"
+          >
+            {opening ? "Ouverture…" : "📂 Ouvrir le dossier"}
+          </button>
         </div>
       )}
 

@@ -25,9 +25,9 @@ const config: Config = {
         whatsapp: "#25d366",
       },
       fontFamily: {
-        serif: ['"Cormorant Garamond"', "serif"],
+        serif: ['"Cormorant"', "serif"],
         sans: ['"Public Sans"', "sans-serif"],
-        display: ['"Bodoni Moda"', "serif"],
+        display: ['"Playfair Display"', "serif"],
       },
       borderRadius: {
         xs: "8px",
