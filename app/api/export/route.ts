@@ -30,6 +30,7 @@ export async function POST(req: Request) {
       );
     }
     const draft = parsed.data;
+    const locale = draft.locale ?? "fr";
 
     await writeDraft(slug, draft);
 
@@ -37,7 +38,10 @@ export async function POST(req: Request) {
     const proto = req.headers.get("x-forwarded-proto") ?? "http";
     const baseUrl = `${proto}://${host}`;
 
-    const outDir = path.join(OUTPUT_BASE, slug);
+    const outDir =
+      locale === "fr"
+        ? path.join(OUTPUT_BASE, slug)
+        : path.join(OUTPUT_BASE, slug, locale);
     await fs.mkdir(outDir, { recursive: true });
 
     const { chromium } = await import("playwright");

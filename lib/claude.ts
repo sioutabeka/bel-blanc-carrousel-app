@@ -3,7 +3,7 @@ import { z } from "zod";
 import os from "node:os";
 
 const CLAUDE_BIN = process.env.CLAUDE_BIN ?? "claude";
-const TIMEOUT_MS = 120_000;
+const TIMEOUT_MS = 180_000;
 
 /** Tools de Claude Code à bloquer explicitement — on veut juste de la génération texte. */
 const BLOCKED_TOOLS = [

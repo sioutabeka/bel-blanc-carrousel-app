@@ -46,6 +46,12 @@ export default function Sidebar({ byTag }: Props) {
           </div>
           <div className="font-display text-night text-2xl">Bel &amp; Blanc</div>
         </Link>
+        <Link
+          href="/patterns"
+          className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.18em] uppercase text-ink-muted hover:text-night"
+        >
+          <span>◆</span> Patterns narratifs
+        </Link>
       </div>
 
       {/* Search */}

@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { getArticle } from "@/lib/articles";
 import { extractCarousel } from "@/lib/prompts/extract";
+import { getPattern } from "@/lib/patterns-store";
+import { isLocale, DEFAULT_LOCALE } from "@/lib/locales";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 180;
 
 export async function POST(req: Request) {
   try {
@@ -13,13 +15,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "slug manquant" }, { status: 400 });
     }
 
+    const patternId = String(body?.pattern ?? "").trim();
+    if (!patternId) {
+      return NextResponse.json({ error: "pattern manquant" }, { status: 400 });
+    }
+    const patternRecord = await getPattern(patternId);
+    if (!patternRecord) {
+      return NextResponse.json(
+        { error: `pattern inconnu: ${patternId}` },
+        { status: 400 }
+      );
+    }
+
+    const localeRaw = body?.locale;
+    const locale = isLocale(localeRaw) ? localeRaw : DEFAULT_LOCALE;
+
     const article = await getArticle(slug);
     if (!article) {
       return NextResponse.json({ error: `article inconnu: ${slug}` }, { status: 404 });
     }
 
-    const draft = await extractCarousel(article);
-    return NextResponse.json({ draft, slug });
+    const draft = await extractCarousel(article, patternRecord.id, locale);
+    return NextResponse.json({ draft, slug, pattern: patternRecord.id, locale });
   } catch (err) {
     const message = err instanceof Error ? err.message : "erreur inconnue";
     console.error("[/api/extract]", err);

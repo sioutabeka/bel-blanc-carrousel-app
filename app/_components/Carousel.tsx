@@ -14,6 +14,7 @@ import type {
   DontsSlide,
   CtaSlide,
 } from "@/lib/schemas";
+import { LOCALES, type Locale } from "@/lib/locales";
 
 const ADDRESSES = [
   { city: "La Marsa", line: "Carrefour La Marsa, Sidi Daoued" },
@@ -21,8 +22,15 @@ const ADDRESSES = [
   { city: "Sfax", line: "Carrefour Nasria, Bab El Jebli, Sfax" },
 ];
 
-const FOOTER_LABEL = "Nos pressings";
-const FOOTER_SIDE = "expert textile depuis 2001";
+const FOOTER_LABEL: Record<Locale, string> = {
+  fr: "Nos pressings",
+  ar: "Sebbanetna",
+};
+
+const FOOTER_SIDE: Record<Locale, string> = {
+  fr: "expert textile depuis 2001",
+  ar: "expert textile mte3 2001",
+};
 
 interface CarouselProps {
   draft: CarouselDraft;
@@ -31,6 +39,9 @@ interface CarouselProps {
 }
 
 export default function Carousel({ draft, editable, onChange }: CarouselProps) {
+  const locale: Locale = draft.locale ?? "fr";
+  const dir = LOCALES[locale].dir;
+
   const updateSlide = (i: number, slide: Slide) => {
     if (!onChange) return;
     const slides = draft.slides.slice();
@@ -57,6 +68,8 @@ export default function Carousel({ draft, editable, onChange }: CarouselProps) {
             slide={slide}
             editable={editable}
             onChange={(s) => updateSlide(i, s)}
+            locale={locale}
+            dir={dir}
           />
         </div>
       ))}
@@ -68,36 +81,42 @@ interface SlideProps<T extends Slide> {
   slide: T;
   editable?: boolean;
   onChange: (slide: T) => void;
+  locale: Locale;
+  dir: "ltr" | "rtl";
 }
 
 function SlideRenderer({
   slide,
   editable,
   onChange,
+  locale,
+  dir,
 }: {
   slide: Slide;
   editable?: boolean;
   onChange: (s: Slide) => void;
+  locale: Locale;
+  dir: "ltr" | "rtl";
 }) {
   switch (slide.type) {
     case "cover":
-      return <Cover slide={slide} editable={editable} onChange={onChange} />;
+      return <Cover slide={slide} editable={editable} onChange={onChange} locale={locale} dir={dir} />;
     case "body":
-      return <Body slide={slide} editable={editable} onChange={onChange} />;
+      return <Body slide={slide} editable={editable} onChange={onChange} locale={locale} dir={dir} />;
     case "method":
-      return <Method slide={slide} editable={editable} onChange={onChange} />;
+      return <Method slide={slide} editable={editable} onChange={onChange} locale={locale} dir={dir} />;
     case "steps":
-      return <Steps slide={slide} editable={editable} onChange={onChange} />;
+      return <Steps slide={slide} editable={editable} onChange={onChange} locale={locale} dir={dir} />;
     case "donts":
-      return <Donts slide={slide} editable={editable} onChange={onChange} />;
+      return <Donts slide={slide} editable={editable} onChange={onChange} locale={locale} dir={dir} />;
     case "cta":
-      return <Cta slide={slide} editable={editable} onChange={onChange} />;
+      return <Cta slide={slide} editable={editable} onChange={onChange} locale={locale} dir={dir} />;
   }
 }
 
-function Cover({ slide, editable, onChange }: SlideProps<CoverSlide>) {
+function Cover({ slide, editable, onChange, locale, dir }: SlideProps<CoverSlide>) {
   return (
-    <div className="cs-slide cs-cover-bg">
+    <div className="cs-slide cs-cover-bg" dir={dir}>
       <div className="cs-hook">
         <h1 className="cs-hook-title">
           <EditableText
@@ -113,15 +132,15 @@ function Cover({ slide, editable, onChange }: SlideProps<CoverSlide>) {
             onChange={(subtitle) => onChange({ ...slide, subtitle })}
           />
         </p>
-        <Footer />
+        <Footer locale={locale} />
       </div>
     </div>
   );
 }
 
-function Cta({ slide, editable, onChange }: SlideProps<CtaSlide>) {
+function Cta({ slide, editable, onChange, locale, dir }: SlideProps<CtaSlide>) {
   return (
-    <div className="cs-slide cs-cta-bg">
+    <div className="cs-slide cs-cta-bg" dir={dir}>
       <div className="cs-hook">
         <h1 className="cs-hook-title">
           <EditableText
@@ -157,20 +176,20 @@ function Cta({ slide, editable, onChange }: SlideProps<CtaSlide>) {
             />
           </div>
         </div>
-        <Footer />
+        <Footer locale={locale} />
       </div>
     </div>
   );
 }
 
-function Footer() {
+function Footer({ locale }: { locale: Locale }) {
   return (
     <div className="cs-hook-footer">
       <div className="cs-hook-footer-head">
         <span className="cs-accent-dot" />
-        <span className="cs-footer-label">{FOOTER_LABEL}</span>
+        <span className="cs-footer-label">{FOOTER_LABEL[locale]}</span>
         <span className="cs-footer-spacer" />
-        <span className="cs-footer-side">{FOOTER_SIDE}</span>
+        <span className="cs-footer-side">{FOOTER_SIDE[locale]}</span>
       </div>
       <div className="cs-addresses">
         {ADDRESSES.map((a) => (
@@ -232,9 +251,9 @@ function pickTitleSize(text: string): string {
   return "";
 }
 
-function Body({ slide, editable, onChange }: SlideProps<BodySlide>) {
+function Body({ slide, editable, onChange, dir }: SlideProps<BodySlide>) {
   return (
-    <div className="cs-slide cs-body-bg">
+    <div className="cs-slide cs-body-bg" dir={dir}>
       <div className="cs-body-content">
         <AutoShrink deps={[slide]}>
           <Tag
@@ -297,14 +316,14 @@ function Body({ slide, editable, onChange }: SlideProps<BodySlide>) {
   );
 }
 
-function Method({ slide, editable, onChange }: SlideProps<MethodSlide>) {
+function Method({ slide, editable, onChange, dir }: SlideProps<MethodSlide>) {
   const updateStep = (i: number, patch: Partial<MethodSlide["steps"][number]>) => {
     const steps = slide.steps.slice();
     steps[i] = { ...steps[i], ...patch };
     onChange({ ...slide, steps });
   };
   return (
-    <div className="cs-slide cs-body-bg">
+    <div className="cs-slide cs-body-bg" dir={dir}>
       <div className="cs-body-content">
         <AutoShrink deps={[slide]}>
           <Tag
@@ -363,14 +382,14 @@ function Method({ slide, editable, onChange }: SlideProps<MethodSlide>) {
   );
 }
 
-function Steps({ slide, editable, onChange }: SlideProps<StepsSlide>) {
+function Steps({ slide, editable, onChange, dir }: SlideProps<StepsSlide>) {
   const updateStep = (i: number, patch: Partial<StepsSlide["steps"][number]>) => {
     const steps = slide.steps.slice();
     steps[i] = { ...steps[i], ...patch };
     onChange({ ...slide, steps });
   };
   return (
-    <div className="cs-slide cs-body-bg">
+    <div className="cs-slide cs-body-bg" dir={dir}>
       <div className="cs-body-content">
         <AutoShrink deps={[slide]}>
           <Tag
@@ -429,14 +448,14 @@ function Steps({ slide, editable, onChange }: SlideProps<StepsSlide>) {
   );
 }
 
-function Donts({ slide, editable, onChange }: SlideProps<DontsSlide>) {
+function Donts({ slide, editable, onChange, dir }: SlideProps<DontsSlide>) {
   const updateDont = (i: number, patch: Partial<DontsSlide["donts"][number]>) => {
     const donts = slide.donts.slice();
     donts[i] = { ...donts[i], ...patch };
     onChange({ ...slide, donts });
   };
   return (
-    <div className="cs-slide cs-body-bg">
+    <div className="cs-slide cs-body-bg" dir={dir}>
       <div className="cs-body-content">
         <AutoShrink deps={[slide]}>
           <Tag

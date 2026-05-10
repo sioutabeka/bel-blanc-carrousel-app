@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import Carousel from "./Carousel";
 import ThemePicker from "./ThemePicker";
 import type { CarouselDraft } from "@/lib/schemas";
+import type { PatternRecord } from "@/lib/patterns";
+import { LOCALES, LOCALE_IDS, DEFAULT_LOCALE, type Locale } from "@/lib/locales";
 
 interface Props {
   slug: string;
@@ -28,7 +31,33 @@ export default function ExtractButton({ slug }: Props) {
 
   const [editing, setEditing] = useState(false);
 
+  const [patterns, setPatterns] = useState<PatternRecord[]>([]);
+  const [patternId, setPatternId] = useState<string>("");
+  const [locale, setLocale] = useState<Locale>(DEFAULT_LOCALE);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/patterns", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        const list = (data?.patterns ?? []) as PatternRecord[];
+        setPatterns(list);
+        if (list.length > 0) setPatternId((cur) => cur || list[0].id);
+      })
+      .catch((e) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : "patterns indisponibles");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   async function generate() {
+    if (!patternId) {
+      setError("Choisis un pattern avant de générer.");
+      return;
+    }
     setLoading(true);
     setError(null);
     setDraft(null);
@@ -40,11 +69,11 @@ export default function ExtractButton({ slug }: Props) {
       const res = await fetch("/api/extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug }),
+        body: JSON.stringify({ slug, pattern: patternId, locale }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      setDraft(data.draft);
+      setDraft({ ...data.draft, locale: data.draft?.locale ?? locale });
       setElapsed((Date.now() - t0) / 1000);
     } catch (e) {
       setError(e instanceof Error ? e.message : "erreur");
@@ -92,13 +121,85 @@ export default function ExtractButton({ slug }: Props) {
     }
   }
 
+  const activePattern = patterns.find((p) => p.id === patternId) ?? null;
+
   return (
     <div className="space-y-4">
+      <div className="p-4 rounded-md bg-blue-light/60 border border-blue/20 space-y-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <div className="text-[11px] font-bold tracking-[0.28em] uppercase text-blue-dark">
+            Pattern narratif
+          </div>
+          <Link
+            href="/patterns"
+            className="text-[11px] underline text-ink-muted hover:text-night"
+          >
+            Gérer les patterns →
+          </Link>
+        </div>
+        {patterns.length === 0 ? (
+          <div className="text-xs text-ink-muted italic">Chargement…</div>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {patterns.map((p) => {
+              const active = p.id === patternId;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setPatternId(p.id)}
+                  disabled={loading}
+                  title={p.tagline}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold tracking-wide border transition ${
+                    active
+                      ? "bg-night text-white border-night"
+                      : "bg-white text-night border-blue/25 hover:border-blue hover:bg-blue-light"
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+        {activePattern && (
+          <p className="font-serif italic text-sm text-ink-muted">
+            {activePattern.tagline}
+          </p>
+        )}
+        <div className="pt-3 border-t border-blue/15 space-y-2">
+          <div className="text-[11px] font-bold tracking-[0.28em] uppercase text-blue-dark">
+            Langue cible
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {LOCALE_IDS.map((id) => {
+              const active = id === locale;
+              const meta = LOCALES[id];
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setLocale(id)}
+                  disabled={loading}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold tracking-wide border transition ${
+                    active
+                      ? "bg-night text-white border-night"
+                      : "bg-white text-night border-blue/25 hover:border-blue hover:bg-blue-light"
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  <span className="font-mono">{meta.short}</span>
+                  <span className="ml-1.5 opacity-70">· {meta.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
       <div className="flex items-center gap-3 p-4 rounded-md bg-blue-light/60 border border-blue/20 flex-wrap">
         <button
           type="button"
           onClick={generate}
-          disabled={loading}
+          disabled={loading || !patternId}
           className="px-5 py-2.5 rounded-md bg-night text-white text-sm font-semibold tracking-wide hover:bg-night-mid disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? "Claude réfléchit… (~45s)" : "Générer le carrousel"}

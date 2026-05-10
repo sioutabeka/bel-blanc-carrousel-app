@@ -120,6 +120,7 @@ export const Slide = z.discriminatedUnion("type", [
 export const CarouselDraft = z.object({
   slides: z.array(Slide).min(5).max(10),
   theme: z.string().optional(),
+  locale: z.enum(["fr", "ar"]).optional().default("fr"),
 });
 
 export type CoverSlide = z.infer<typeof CoverSlide>;
